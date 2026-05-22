@@ -4,13 +4,33 @@ const INIT_DIAMETER = 100;
 const BALLS_AMOUNT = 6;
 const INIT_COLORS = ['orange', 'purple', 'green', 'red', 'skyblue', 'pink'];
 const MIN_DIFF_DIA = 20, MAX_DIFF_DIA = 60;
+const HOVER_TIME_LIMIT = 2000;
+const CYCLES_NUM = 10;
+const HANDLERS_INTERVAL = 2000;
+const TIMER_INTERVAL = 500;
 
-var balls;
+var gHoverHandler;
+var gBalls;
 
 function onInit() {
-    balls = createBalls(BALLS_AMOUNT, INIT_DIAMETER, INIT_COLORS);
-    renderBalls(balls);
+    resetHoverHandler();
+    gBalls = createBalls(BALLS_AMOUNT, INIT_DIAMETER, INIT_COLORS);
+    renderBalls(gBalls);
     changeBodyBgColor('black');
+}
+
+function resetHoverHandler() {
+    if (gHoverHandler && gHoverHandler.isHover) {
+        clearInterval(gHoverHandler.handlersIntervalId);
+        clearInterval(gHoverHandler.timerIntervalId);
+    }
+    gHoverHandler = {
+        startTime: null,
+        handlersIntervalId: null,
+        timerIntervalId: null,
+        cycles: 0,
+        isHover: false
+    };
 }
 
 function onBallClick(elBall, maxDiameter) {
@@ -31,7 +51,7 @@ function changeBallDiameter(elBall, maxDiameter, diameterDiff) {
 }
 
 function getBallModelByElement(elBall) {
-    for (const ball of balls) {
+    for (const ball of gBalls) {
         if (elBall.classList.contains(ball.className)) return ball;
     }
     return null;
@@ -64,7 +84,7 @@ function renderBalls(balls) {
 function onSwap() {
     const elBalls = document.querySelectorAll('.ball');
     const elBall1 = elBalls[0], elBall2 = elBalls[1];
-    const ball1 = balls[0], ball2 = balls[1];
+    const ball1 = gBalls[0], ball2 = gBalls[1];
     // Model
     const tempColor = ball1.bgColor;
     ball1.bgColor = ball2.bgColor;
@@ -89,4 +109,33 @@ function onChangeBgColor() {
 
 function changeBodyBgColor(bgColor) {
     document.body.style.backgroundColor = bgColor;
+}
+
+function onBallEnter() {
+    gHoverHandler.startTime = Date.now();
+    gHoverHandler.isHover = true;
+    gHoverHandler.timerIntervalId = setInterval(hoverTimer, TIMER_INTERVAL);
+}
+
+function hoverTimer() {
+    const hoverTime = Date.now() - gHoverHandler.startTime;
+    if (hoverTime > HOVER_TIME_LIMIT) {
+        gHoverHandler.handlersIntervalId = setInterval(runClickHandlers, HANDLERS_INTERVAL);
+        clearInterval(gHoverHandler.timerIntervalId);
+    }
+}
+
+function runClickHandlers() {
+    const elBalls = document.querySelectorAll('.ball');
+    onBallClick(elBalls[0], 400);
+    onBallClick(elBalls[1], 250);
+    onSwap();
+    onReduceDiameter();
+
+    gHoverHandler.cycles++;
+    if (gHoverHandler.cycles >= CYCLES_NUM) resetHoverHandler();
+}
+
+function onBallLeave() {
+    resetHoverHandler();
 }
