@@ -22,5 +22,8 @@ h1 {
     align-items: center;
 
     transition: 1s;
+}
 
+.ball2 {
+    background-color: purple;
 }
