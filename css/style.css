@@ -8,7 +8,6 @@ h1 {
 }
 
 .ball {
-    background-color: orange;
     width: 100px;
     aspect-ratio: 1;
     border-radius: 50%;
@@ -22,8 +21,4 @@ h1 {
     align-items: center;
 
     transition: 1s;
-}
-
-.ball2 {
-    background-color: purple;
 }
