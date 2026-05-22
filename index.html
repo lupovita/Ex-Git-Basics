@@ -12,6 +12,10 @@
 
 <body onload="onInit()">
     <h1>The Ball Game</h1>
+    <h2>Total Moves Made: <span>0</span> Current Move: <span>0</span></h2>
+
+    <button class="undo" disabled onclick="onUndo(this)">Undo</button>
+    <button class="redo" disabled onclick="onRedo(this)">Redo</button>
 
     <div class="ball ball1" onclick="onBallClick(this, 400)">100</div>
     <div class="ball ball2" onclick="onBallClick(this, 250)">100</div>

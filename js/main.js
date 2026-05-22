@@ -11,12 +11,19 @@ const TIMER_INTERVAL = 500;
 
 var gHoverHandler;
 var gBalls;
+var gBgColor;
+var gGame;
 
 function onInit() {
     resetHoverHandler();
     gBalls = createBalls(BALLS_AMOUNT, INIT_DIAMETER, INIT_COLORS);
+    gBgColor = 'black';
+    gGame = { states: [], idx: -1 };
+    updateGameStates(true);
     renderBalls(gBalls);
-    changeBodyBgColor('black');
+    changeBodyBgColor(gBgColor);
+    renderMoves();
+    handleBtnsActiveState();
 }
 
 function resetHoverHandler() {
@@ -36,6 +43,7 @@ function resetHoverHandler() {
 function onBallClick(elBall, maxDiameter) {
     const diameterDiff = getRandomInt(MIN_DIFF_DIA, MAX_DIFF_DIA);
     changeBallDiameter(elBall, maxDiameter, diameterDiff);
+    updateGameStates(true);
 }
 
 function changeBallDiameter(elBall, maxDiameter, diameterDiff) {
@@ -70,6 +78,19 @@ function createBalls(ballsAmount, diameter, colors) {
     return balls;
 }
 
+function copyBalls(balls) {
+    const ballsCopy = [];
+    for (const ball of balls) {
+        const ballCopy = {
+            className: ball.className,
+            diameter: ball.diameter,
+            bgColor: ball.bgColor
+        };
+        ballsCopy.push(ballCopy);
+}
+    return ballsCopy;
+}
+
 function renderBalls(balls) {
     const elBalls = document.querySelectorAll('.ball');
     for (let i = 0; i < elBalls.length; i++) {
@@ -79,6 +100,12 @@ function renderBalls(balls) {
         elBall.style.backgroundColor = ball.bgColor;
         if (i < 2) elBall.innerText = ball.diameter;
     }
+}
+
+function renderMoves() {
+    const elMovesMadeSpans = document.querySelectorAll('h2 span');
+    elMovesMadeSpans[0].innerText = gGame.states.length - 1;
+    elMovesMadeSpans[1].innerText = gGame.idx;
 }
 
 function onSwap() {
@@ -92,22 +119,28 @@ function onSwap() {
     // Dom
     elBall1.style.backgroundColor = ball1.bgColor;
     elBall2.style.backgroundColor = ball2.bgColor;
+
+    updateGameStates(true);
 }
 
 function onReduceDiameter() {
     const elBalls = document.querySelectorAll('.ball');
     let diameterDiff = -getRandomInt(MIN_DIFF_DIA, MAX_DIFF_DIA);
     changeBallDiameter(elBalls[0], undefined, diameterDiff);
-
+    
     diameterDiff = -getRandomInt(MIN_DIFF_DIA, MAX_DIFF_DIA);
     changeBallDiameter(elBalls[1], undefined, diameterDiff);
+
+    updateGameStates(true);
 }
 
 function onChangeBgColor() {
     changeBodyBgColor(getRandomColor());
+    updateGameStates(true);
 }
 
 function changeBodyBgColor(bgColor) {
+    gBgColor = bgColor;
     document.body.style.backgroundColor = bgColor;
 }
 
@@ -138,4 +171,39 @@ function runClickHandlers() {
 
 function onBallLeave() {
     resetHoverHandler();
+}
+
+function onUndo(elBtn) {
+    updateGameStates(false, -1);
+}
+
+function onRedo(elBtn) {
+    updateGameStates(false, 1);
+}
+
+function updateGameStates(isMove, step = null) {
+    if (!isMove) {
+        if (gGame.idx + step < 0 || gGame.idx + step >= gGame.states.length) return;
+
+        gGame.idx += step;
+        const currGameState = gGame.states[gGame.idx];
+        gBalls = copyBalls(currGameState.balls);
+        gBgColor = currGameState.bgColor;
+        renderBalls(gBalls);
+        changeBodyBgColor(gBgColor);
+    }
+    else {
+        gGame.idx++;
+        const currGameState = { balls: copyBalls(gBalls), bgColor: gBgColor };
+        gGame.states.splice(gGame.idx, Infinity, currGameState);
+    }
+    renderMoves();
+    handleBtnsActiveState();
+}
+
+function handleBtnsActiveState() {
+    const elBtns = document.querySelectorAll('button');
+    const elBtnUndo = elBtns[0], elBtnRedo = elBtns[1];
+    elBtnUndo.disabled = gGame.idx > 0 ? false : true;
+    elBtnRedo.disabled = gGame.idx < gGame.states.length - 1 ? false : true;
 }

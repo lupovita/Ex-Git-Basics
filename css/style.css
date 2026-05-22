@@ -3,7 +3,7 @@ body {
     text-align: center;
 }
 
-h1 {
+h1, h2 {
     color: white;
 }
 
@@ -21,4 +21,15 @@ h1 {
     align-items: center;
 
     transition: 1s;
+}
+
+button {
+    font-size: 1.5em;
+    font-weight: bold;
+    padding: .5em 1em;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    color: pink;
 }
