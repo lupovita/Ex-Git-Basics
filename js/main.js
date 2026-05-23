@@ -8,6 +8,7 @@ const HOVER_TIME_LIMIT = 2000;
 const CYCLES_NUM = 10;
 const HANDLERS_INTERVAL = 2000;
 const TIMER_INTERVAL = 500;
+const SECOND = 1000, MINUTE = 60;
 
 var gHoverHandler;
 var gBalls;
@@ -17,13 +18,13 @@ var gGame;
 function onInit() {
     resetHoverHandler();
     gBalls = createBalls(BALLS_AMOUNT, INIT_DIAMETER, INIT_COLORS);
-    gBgColor = 'black';
-    gGame = { states: [], idx: -1 };
+    updateBodyBgColor('black');
+    resetGame();
     updateGameStates(true);
     renderBalls(gBalls);
-    changeBodyBgColor(gBgColor);
     renderMoves();
     handleBtnsActiveState();
+    updateTimer();
 }
 
 function resetHoverHandler() {
@@ -37,6 +38,16 @@ function resetHoverHandler() {
         timerIntervalId: null,
         cycles: 0,
         isHover: false
+    };
+}
+
+function resetGame() {
+    if (gGame && gGame.startTime) clearInterval(gGame.timerIntervalId);
+    gGame = {
+        states: [],
+        idx: -1,
+        startTime: null,
+        timerIntervalId: null
     };
 }
 
@@ -87,7 +98,7 @@ function copyBalls(balls) {
             bgColor: ball.bgColor
         };
         ballsCopy.push(ballCopy);
-}
+    }
     return ballsCopy;
 }
 
@@ -103,9 +114,10 @@ function renderBalls(balls) {
 }
 
 function renderMoves() {
-    const elMovesMadeSpans = document.querySelectorAll('h2 span');
-    elMovesMadeSpans[0].innerText = gGame.states.length - 1;
-    elMovesMadeSpans[1].innerText = gGame.idx;
+    const elTotalMoves = document.querySelector('.total-moves');
+    elTotalMoves.innerText = gGame.states.length - 1;
+    const elCurrMove = document.querySelector('.current-move');
+    elCurrMove.innerText = gGame.idx;
 }
 
 function onSwap() {
@@ -127,7 +139,7 @@ function onReduceDiameter() {
     const elBalls = document.querySelectorAll('.ball');
     let diameterDiff = -getRandomInt(MIN_DIFF_DIA, MAX_DIFF_DIA);
     changeBallDiameter(elBalls[0], undefined, diameterDiff);
-    
+
     diameterDiff = -getRandomInt(MIN_DIFF_DIA, MAX_DIFF_DIA);
     changeBallDiameter(elBalls[1], undefined, diameterDiff);
 
@@ -135,11 +147,11 @@ function onReduceDiameter() {
 }
 
 function onChangeBgColor() {
-    changeBodyBgColor(getRandomColor());
+    updateBodyBgColor(getRandomColor());
     updateGameStates(true);
 }
 
-function changeBodyBgColor(bgColor) {
+function updateBodyBgColor(bgColor) {
     gBgColor = bgColor;
     document.body.style.backgroundColor = bgColor;
 }
@@ -190,9 +202,13 @@ function updateGameStates(isMove, step = null) {
         gBalls = copyBalls(currGameState.balls);
         gBgColor = currGameState.bgColor;
         renderBalls(gBalls);
-        changeBodyBgColor(gBgColor);
+        updateBodyBgColor(gBgColor);
     }
     else {
+        if (!gGame.startTime && gGame.idx >= 0) {
+            gGame.startTime = Date.now();
+            gGame.timerIntervalId = setInterval(updateTimer, TIMER_INTERVAL);
+        }
         gGame.idx++;
         const currGameState = { balls: copyBalls(gBalls), bgColor: gBgColor };
         gGame.states.splice(gGame.idx, Infinity, currGameState);
@@ -206,4 +222,19 @@ function handleBtnsActiveState() {
     const elBtnUndo = elBtns[0], elBtnRedo = elBtns[1];
     elBtnUndo.disabled = gGame.idx > 0 ? false : true;
     elBtnRedo.disabled = gGame.idx < gGame.states.length - 1 ? false : true;
+}
+
+function updateTimer() {
+    const elTime = document.querySelector('.time');
+    if (gGame.startTime) {
+        const timeInSec = parseInt((Date.now() - gGame.startTime) / SECOND);
+        let seconds = timeInSec % MINUTE;
+        seconds = seconds < 10 ? `0${seconds}` : seconds;
+        let minutes = parseInt(timeInSec / MINUTE);
+        minutes = minutes < 10 ? `0${minutes}` : minutes;
+        elTime.innerText = `${minutes}:${seconds}`;
+    }
+    else {
+        elTime.innerText = '00:00';
+    }
 }
